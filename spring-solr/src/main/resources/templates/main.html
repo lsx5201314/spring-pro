@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript" src="js/jquery-1.9.1.min.js"></script>
+    <link rel="stylesheet" href="js/bootstrap3/css/bootstrap.css">
+    <script type="text/javascript" src="/js/bootstrap3/js/bootstrap.js"></script>
+    <link rel="stylesheet" href="js/bootstrap-table/bootstrap-table.css">
+    <script src="js/bootstrap-table/bootstrap-table.js"></script>
+    <script src="js/bootstrap-table/locale/bootstrap-table-zh-CN.js"></script>
+    <!-- dialog -->
+    <script src="js/bootstrap-bootbox/bootbox.js"></script>
+    <!-- 日期插件 -->
+    <script src="js/bootstrap-datetimepicker/js/bootstrap-datetimepicker.js"></script>
+    <script src="js/bootstrap-datetimepicker/js/locales/bootstrap-datetimepicker.zh-CN.js"></script>
+    <link rel="stylesheet" href="js/bootstrap-datetimepicker/css/bootstrap-datetimepicker.css">
+    <!-- 图片上传 -->
+    <script src="js/bootstrap-fileinput/js/fileinput.js"></script>
+    <script src="js/bootstrap-fileinput/js/locales/zh.js"></script>
+    <link rel="stylesheet" href="js/bootstrap-fileinput/css/fileinput.css">
+</head>
+<body>
+<div id="toolbar">
+    <input id="carNameId" class="btn btn-default">
+    <input onclick="refalsh()" type="button" class="btn btn-info" value="搜索">
+    <input onclick="openAddDialog()" type="button" class="btn btn-success" value="新增">
+
+</div>
+<table class="table" id="myTable"></table>
+<script>
+    $(function () {
+        initCar();
+    })
+    function initCar() {
+
+            $('#myTable').bootstrapTable({
+                toolbar:'#toolbar',
+                url:'../queryCar',//获取数据地址
+                pagination:true, //是否展示分页
+                pageList:[5, 10, 20, 50],//分页组件
+                pageNumber:1,
+                pageSize:5,//默认每页条数
+                search:true,//是否显示搜索框
+                //searchText:'试试',//初始化搜索文字
+                showColumns:false,//是否显示 内容列下拉框
+                showToggle:true,//是否显示 切换试图（table/card）按钮
+                showPaginationSwitch:false,//是否显示 数据条数选择框
+                showRefresh:false,//是否显示刷新按钮
+                detailView:false,//设置为 true 可以显示详细页面模式。
+                showFooter:false,//是否显示列脚
+                clickToSelect: true, //是否启用点击选中行
+                sidePagination:'server',//分页方式：client客户端分页，server服务端分页
+                striped:true,
+                columns:[
+                    {checkbox:true},
+                    {field:'carId',title:'ID',align:'center',width:150},
+                    {field:'carName',title:'名称',align:'center',width:150},
+                    {field:'carDate',title:'日期',align:'center',width:150
+                    },
+                    {field:'carPrice',title:'价格',align:'center',width:150
+                    },
+                    {field:'1',title:'操作',align:'center',width:150,
+                        formatter: function(value,row,index) {
+                            return '<button onclick="queryCarByUserId('+row.carId+')" class="btn btn-info glyphicon glyphicon-pencil btn-sm" >修改</button>' +
+                                '<input onclick="deleteStudentById('+row.carId+',\''+row.carName+'\')" type="button" class="btn btn-warning glyphicon glyphicon-pencil  btn-sm " value="删除">';
+                        }
+                    },
+                ],
+                queryParams:function(){
+                    return {
+                        page: this.pageNumber,
+                        rows: this.pageSize,
+                        "carName":$("#carNameId").val()
+                    };
+                },
+            })
+
+    }
+    function refalsh() {
+        $('#myTable').bootstrapTable('refresh');
+    }
+    function deleteStudentById(ids,names) {
+        bootbox.confirm({
+            size: "small",
+            message: "你确定删除"+names+"么?",
+            buttons: {
+                confirm: {
+                    label: '确定',
+                    className: 'btn-success'
+                },
+                cancel: {
+                    label: '取消',
+                    className: 'btn-danger'
+                }
+            },
+            callback: function(result){
+                if (result) {
+                    $.ajax({
+                        url:"../deleteCarById",
+                        type:"post",
+                        data:{id:ids},
+                        success:function(){
+                            bootbox.alert({
+                                size: "small",
+                                title: "提示",
+                                message: "删除成功",
+                                callback: function(){}
+                            })
+                            $('#myTable').bootstrapTable('refresh');
+                        }
+                    })
+                }
+            }
+        })
+    }
+    function setDate() {
+        $('.date').datetimepicker({
+            language: 'zh-CN',//显示中文
+            format: 'yyyy-mm-dd',//显示格式
+            minView: "month",//设置只显示到月份
+            initialDate: new Date(),//初始化当前日期
+            autoclose: true,//选中自动关闭
+            todayBtn: true//显示今日按钮
+        });
+    }
+    function addCar() {
+        $.ajax({
+            url:"../addCar",
+            type:"post",
+            data:$("#addCarformid").serialize(),
+            success:function () {
+                $('#myTable').bootstrapTable('refresh');
+            }
+        })
+    }
+    function openAddDialog() {
+        bootbox.dialog({
+            title:'添加商品',
+            message: createAddContent("../toaddCar"),
+            closeButton: true,
+            buttons : {
+                "success" : {
+                    "label": "<i class='icon-ok'></i> 保存",
+                    "className": "btn-sm btn-success",
+                    "callback": function () {
+                        addCar()
+                    },
+                },
+                "cancel" : {
+                    "label" : "<i class='icon-info'></i> 取消",
+                    "className" : "btn-sm btn-danger",
+                    "callback" : function() {
+                    }
+                }
+            }
+        });
+    }
+    function queryCarByUserId(id) {
+        $.ajax({
+            url:"../queryCarById",
+            type:"post",
+            data:{"id":id},
+
+            success:function (data) {
+                openupdateDialog()
+                $("#carId").val(data.id)
+                $("#carName").val(data.carName)
+                $("#carPrice").val(data.carPrice)
+                $("#carDate").val(data.carDate.toLocaleString().substring(0,10))
+            }
+        })
+    }
+    function openupdateDialog() {
+        bootbox.dialog({
+            title:'修改',
+            message: createAddContent("../toupdCar"),
+            closeButton: true,
+            buttons : {
+                "success" : {
+                    "label": "<i class='icon-ok'></i> 保存",
+                    "className": "btn-sm btn-success",
+                    "callback": function () {
+                        addCar()
+                    },
+                },
+                "cancel" : {
+                    "label" : "<i class='icon-info'></i> 取消",
+                    "className" : "btn-sm btn-danger",
+                    "callback" : function() {
+                    }
+                }
+            }
+        });
+    }
+    var res;
+    function createAddContent(url) {
+        $.ajax({
+            url: url,
+            async: false,
+            success: function (data) {
+                res = data;
+            }
+        });
+        return res;
+    }
+</script>
+</body>
+</html>

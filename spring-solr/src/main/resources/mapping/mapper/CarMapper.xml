@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.jk.mapper.CarMapper" >
+    <insert id="addCar" parameterType="com.jk.model.Car" keyProperty="carId" useGeneratedKeys="true">
+        insert into t_car(carName,carDate,carPrice) values (#{carName},#{carDate},#{carPrice})
+    </insert>
+    <delete id="deleteCar">
+        delete from  t_car where carId in (#{id})
+    </delete>
+    <update id="updateCar" parameterType="com.jk.model.Car">
+        update t_car set carName=#{carName},carDate=#{carDate},carPrice=#{carPrice} where carId=#{carId}
+    </update>
+</mapper>
