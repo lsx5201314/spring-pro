@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" type="text/css" href="js/easyui/themes/default/easyui.css">
+    <link rel="stylesheet" type="text/css" href="js/easyui/themes/icon.css">
+    <script type="text/javascript" src="/js/jquery.min.js"></script>
+    <script type="text/javascript" src="js/easyui/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="/js/uploadify/jquery.uploadify.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/js/uploadify/uploadify.css" />
+    <script type="text/javascript" src="/js/easyui/locale/easyui-lang-zh_CN.js"></script>
+</head>
+<body class="easyui-layout">
+    <div data-options="region:'north',title:'标题',split:true" style="height:100px;">
+
+    </div>
+    <div data-options="region:'west',title:'导航',split:true" style="width:200px;">
+        <ul id="tttreeId"></ul>
+
+    </div>
+    <div data-options="region:'center',title:'内容'" style="padding:5px;background:#eee;">
+        <div id="tttabsid" class="easyui-tabs" style="width:500px;height:250px;" fit="true">
+            <div title="主页" style="padding:20px">
+
+            </div>
+        </div>
+
+    </div>
+<script>
+    $(function () {
+        queryTree();
+    })
+    queryTree = function () {
+        $('#tttreeId').tree({
+            url:"../power/queryTree",
+            onClick: function(node){
+                if (node.url!=null) {
+                    var yn = $('#tttabsid').tabs('exists', node.text);
+                    if (!yn) {
+                        $('#tttabsid').tabs('add', {
+                            title: node.text,
+                            href:node.url,
+                            closable: true,
+                            tools: [{
+                                iconCls: 'icon-mini-refresh',
+                                handler: function () {
+                                    var tab = $('#tttabsid').tabs('getSelected');  // 获取选择的面板
+                                    tab.panel('refresh', node.url);
+                                }
+                            }]
+                        });
+                    } else {
+                        $('#tttabsid').tabs('select', node.text);
+                    }
+                }
+            }
+
+        });
+    }
+    function  uploadify(){
+    $("#uploadImg").uploadify({
+        //插件自带  不可忽略的参数flash插件
+        'swf': '/js/uploadify/uploadify.swf',
+        //前台请求后台的url 不可忽略的参数 ******
+        'uploader': '../user/upload',
+        //给div的进度条加背景 不可忽略******
+        'queueID': 'show_file',
+        //上传文件文件名 跟file标签 name值 保持一致******
+        'fileObjName' : 'file',
+        //给上传按钮设置文字
+        'buttonText': '上传',
+        //设置文件是否自动上传
+        'auto': true,
+        //可以同时选择多个文件 默认为true  不可忽略
+        'multi': true,
+        //上传后队列是否消失
+        'removeCompleted': true,
+        //队列消失时间
+        'removeTimeout' : 1,
+        //上传文件的个数，项目中一共可以上传文件的个数
+        'uploadLimit':  -1,
+        //上传文件的类型
+        'fileTypeExts': '*.*',
+        //成功回调函数 file：文件对象。data后台输出数据
+        'onUploadSuccess':function(file,data,response){
+
+            //alert(file.name+" 路径："+data.imagePath)
+            //图片回显， 预览
+            $("#show_img").attr("src","../"+data.substr(1,data.length-2))
+            // 文本框 回填
+            $("[name='userImg']").val(data.substr(1,data.length-2));
+        }
+
+    });
+    }
+    function queryRole(){
+        $('#queryRoleSelectId').combobox({
+            url:'../role/queryRole',
+            multiple:true,
+            valueField:'rid',
+            textField:'rname'
+        });
+    }
+</script>
+</body>
+</html>

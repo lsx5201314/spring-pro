@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script type="text/javascript" src="/js/uploadify/jquery.uploadify.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="/js/uploadify/uploadify.css" />
+</head>
+<body>
+    <div id="ddaUserDiaLogId" class="easyui-dialog" title="新增" style="width:600px;height:380px;"
+         data-options="iconCls:'icon-save',resizable:true,modal:true,closed:true,toolbar:[{
+				text:'保存',
+				iconCls:'icon-save',
+				handler:function(){
+				    addUser()
+				}
+			}]">
+        <form id="addUserFormId" method="post">
+            <table border="1px">
+                <tr>
+                    <td width="100px">用户名</td>
+                    <td width="400px">
+                        <input class="easyui-textbox" name="userName" style="width:120px">
+                    </td>
+                </tr>
+                <tr>
+                    <td>密码</td>
+                    <td>
+                        <input class="easyui-textbox" name="userPwd"  style="width:120px">
+                    </td>
+                </tr>
+                <tr>
+                    <td>性别</td>
+                    <td>
+                        <input type="radio" value="1" name="userSex">男
+                         <input type="radio" value="2" name="userSex">女
+                    </td>
+                </tr>
+                <tr>
+                    <td>日期</td>
+                    <td>
+                     <input type="text" name="userDate" class="easyui-datebox" ></input>
+                     </td>
+                </tr>
+                <tr>
+                    <td>手机</td>
+                    <td>
+                        <input type="text" name="phone" class="easyui-textbox" ></input>
+                    </td>
+                </tr>
+                <tr>
+                    <td>角色</td>
+                    <td>
+                        <input id="queryRoleSelectId" name="rid" >
+                    </td>
+                </tr>
+
+            </table>
+        </form>
+    </div>
+    <div id="updateUserRoleDailogId" class="easyui-dialog" title="绑定角色" style="width:400px;height:200px;"
+         data-options="iconCls:'icon-save',resizable:true,modal:true,closed:true,toolbar:[{
+				text:'保存',
+				iconCls:'icon-save',
+				handler:function(){
+				    updateUserRole()
+				}}]">
+        <input type="hidden" id = "updateRoleuserId">
+        <ul id="updateRoleByUserIdtreeId"></ul>
+    </div>
+    <table id="userTableId"></table>
+
+<script>
+    $(function () {
+        initUser();
+        uploadify();
+        queryRole()
+    })
+    function initUser() {
+        $('#userTableId').datagrid({
+            url:'../user/queryUser',
+            fitColumns:true,
+            pagination:true,
+            columns:[
+                [
+                {field:'userId',title:'id',width:100},
+                {field:'userName',title:'用户名',width:100},
+                {field:'userPwd',title:'密码',width:100,align:'right'},
+                {field:'userSex',title:'性别',width:100,align:'right',
+                    formatter: function(value,row,index){
+                        if (value==1){
+                            return "男";
+                        } else {
+                            return "女";
+                        }
+                    }
+                },
+                {field:'userDate',title:'日期',width:100,align:'right',
+                    formatter: function(value,row,index){
+                            return value.substring(0,10)
+                    }
+                },
+
+                {field:'phone',title:'手机',width:100,align:'right'},
+                {field:'rname',title:'角色',width:100,align:'right'},
+                {field:'1',title:'操作',width:100,align:'right',
+                    formatter: function(value,row,index){
+                        return "<a name='opendailogname2' href='javaScript:deleteUser("+row.userId+")'>删除</a>-" +
+                            "<a name='opendailogname2' href='javaScript:openupdateUserRoleDialig("+row.userId+")'>角色</a>"
+                    }
+                },
+            ]
+            ],
+            onLoadSuccess:function () {
+                $('[name="opendailogname2"]').linkbutton({
+                    width: 50,
+                    height: 20
+
+                });
+
+            },
+            toolbar: [{
+                iconCls: 'icon-add',
+                text:"新增",
+                handler: function(){
+                    openAddUserDialog();
+                }
+            },'-',{
+                iconCls: 'icon-help',
+                text:"帮助",
+                handler: function(){alert('帮助按钮')}
+            }]
+
+        });
+    }
+    function deleteUser(id) {
+        $.ajax({
+            url:"../user/deleteUserById",
+            type:"post",
+            data:{id:id},
+            success:function () {
+                initUser();
+            }
+        })
+    }
+     function openAddUserDialog() {
+         $("#ddaUserDiaLogId").dialog({
+             title: '新增用户',
+             width: 400,
+             height: 500,
+             closed: false,
+             cache: false,
+             modal: true
+         })
+     }
+    function addUser() {
+        $.messager.progress();	// 显示进度条
+        $('#addUserFormId').form('submit', {
+            url:"../user/addUser",
+            onSubmit: function(){
+                var isValid = $(this).form('validate');
+                if (!isValid){
+                    $.messager.progress('close');	// 如果表单是无效的则隐藏进度条
+                }
+                return isValid;	// 返回false终止表单提交
+            },
+            success: function(){
+
+                $.messager.progress('close');	// 如果提交成功则隐藏进度条
+                $("#ddaUserDiaLogId").dialog("close");
+                initUser();
+            }
+        });
+    }
+
+    function openupdateUserRoleDialig(id) {
+        $("#updateRoleuserId").val(id)
+        $("#updateUserRoleDailogId").dialog("open")
+        queryRoleTreeByUserId(id)
+    }
+    function queryRoleTreeByUserId(id) {
+        $('#updateRoleByUserIdtreeId').tree({
+            url:'../role/queryRoleTree?userId='+id,
+            checkbox:true,
+        });
+
+
+    }
+    function updateUserRole() {
+        var userid =  $("#updateRoleuserId").val()
+        var arr = $("#updateRoleByUserIdtreeId").tree("getChecked")
+        var roleIds = "";
+        for(var i = 0;i<arr.length;i++){
+            roleIds+= roleIds==""?arr[i].id:","+arr[i].id
+        }
+        $.ajax({
+            url:"../role/updateUserRole",
+            data:{"userid":userid,"roleIds":roleIds},
+            type:"post",
+            success:function () {
+                $("#updateUserRoleDailogId").dialog('close')
+                initUser();
+            }
+        })
+    }
+</script>
+
+</body>
+</html>

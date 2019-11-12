@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+    <div id="ddtreeDialogId" class="easyui-dialog" title="绑定权限" style="width:400px;height:400px;"
+         data-options="iconCls:'icon-save',resizable:true,modal:true,closed:true,toolbar:[{
+				text:'保存',
+				iconCls:'icon-save',
+				handler:function(){
+				    updatePowerByRoleId()
+				}
+			}]">
+        <ul id="ttpowerTreeId"></ul>
+    </div>
+    <input type="hidden" id="hiddenRoleid">
+    <table id="queryRoleTableId"></table>
+<script>
+    $(function () {
+        initRole()
+    })
+    function initRole() {
+        $('#queryRoleTableId').datagrid({
+            url:'../role/queryRole',
+            fitColumns:true,
+            fit:true,
+            columns:[
+                [
+                {field:'rid',title:'id',width:100},
+                {field:'rname',title:'角色',width:100},
+                {field:'1',title:'操作',width:100,align:'right',
+                    formatter: function(value,row,index) {
+
+                        return "<a name='opendailogname' href='javaScript:opendialog("+row.rid+")'>绑定权限</a>";
+
+                    }
+                }
+            ]
+            ],
+            onLoadSuccess:function () {
+                $('[name="opendailogname"]').linkbutton({
+                    iconCls: 'icon-save',
+
+                });
+
+            }
+        });
+    }
+    function queryrolepowerByroleid(id){
+
+        $("#hiddenRoleid").val(id)
+        $('#ttpowerTreeId').tree({
+            url:"../power/queryrolepowerByrole?id="+id,
+            checkbox:true,
+            lines:true,
+            parentField:'pid',// 使用util-js.js  树形工具包必须加此属性
+            onContextMenu: function(e, node){
+                e.preventDefault();
+                // 查找节点
+                $('#ttpowerTreeId').tree('select', node.target);
+                // 显示快捷菜单
+                $('#mm').menu('show', {
+                    left: e.pageX,
+                    top: e.pageY
+                });
+            },
+            onDblClick:function(node){
+
+                $("#hiddentreeId").val(node.id)
+                queryTreeInfoByTree(node.id);
+            }
+
+        });
+    }
+    function opendialog(id) {
+        queryrolepowerByroleid(id);
+        $("#ddtreeDialogId").dialog('open')
+    }
+    function updatePowerByRoleId(){
+        var roleid =  $("#hiddenRoleid").val()
+        var arr = $("#ttpowerTreeId").tree("getChecked")
+        var powerids = "";
+        for(var i = 0;i<arr.length;i++){
+            powerids+= powerids==""?arr[i].id:","+arr[i].id
+        }
+        $.ajax({
+            url:"../power/updatePowerByRoleId",
+            data:{"roleId":roleid,"powerIds":powerids},
+            type:"post",
+            success:function () {
+                $("#ddtreeDialogId").dialog('close')
+            }
+        })
+    }
+</script>
+</body>
+</html>
